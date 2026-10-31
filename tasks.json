@@ -2,7 +2,7 @@
     "users": [
         {
             "uname": "test",
-            "task_count": 2,
+            "task_count": 11,
             "show_overdue": true,
             "tasks": [
                 {
@@ -25,6 +25,107 @@
                     "parent": null,
                     "subtasks": [],
                     "priority": 1,
+                    "completed": true
+                },
+                {
+                    "id": 3,
+                    "title": "f",
+                    "dday": 31,
+                    "dmonth": 10,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [],
+                    "priority": "10",
+                    "completed": true
+                },
+                {
+                    "id": 4,
+                    "title": "a",
+                    "dday": 31,
+                    "dmonth": 10,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [],
+                    "priority": "10",
+                    "completed": true
+                },
+                {
+                    "id": 5,
+                    "title": "Food time",
+                    "dday": 31,
+                    "dmonth": 10,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [],
+                    "priority": "10",
+                    "completed": true
+                },
+                {
+                    "id": 6,
+                    "title": "Finish testing Editor",
+                    "dday": 31,
+                    "dmonth": 10,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [
+                        7
+                    ],
+                    "priority": "0",
+                    "completed": false
+                },
+                {
+                    "id": 7,
+                    "title": "Subtask testing",
+                    "dday": 31,
+                    "dmonth": 10,
+                    "dyear": 2026,
+                    "parent": 12,
+                    "subtasks": [],
+                    "priority": "10",
+                    "completed": true
+                },
+                {
+                    "id": 8,
+                    "title": "foobar",
+                    "dday": 31,
+                    "dmonth": 10,
+                    "dyear": 2026,
+                    "parent": 7,
+                    "subtasks": [],
+                    "priority": "10",
+                    "completed": true
+                },
+                {
+                    "id": 9,
+                    "title": "test",
+                    "dday": 31,
+                    "dmonth": 10,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [],
+                    "priority": 10,
+                    "completed": true
+                },
+                {
+                    "id": 10,
+                    "title": "bar",
+                    "dday": 31,
+                    "dmonth": 10,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [],
+                    "priority": 10,
+                    "completed": true
+                },
+                {
+                    "id": 11,
+                    "title": "asdf",
+                    "dday": 31,
+                    "dmonth": 10,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [],
+                    "priority": 10,
                     "completed": true
                 }
             ]
