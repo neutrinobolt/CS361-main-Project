@@ -1,8 +1,6 @@
 """Contains object class for the daily to-do list and subclass for task displays."""
 
 import json
-import time
-import multiprocessing as mp
 from datetime import date as dt
 import tkinter as tk
 import task_class as tc
