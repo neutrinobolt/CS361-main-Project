@@ -2,6 +2,6 @@
 
 ## To DO
 
-1. Test Input Validation
+1. Test Input Validation: DONE
 2. Implement parent/subtask adders
 3. Implement New Subtask Creator

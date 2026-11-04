@@ -37,8 +37,7 @@ class TaskEdit:
     """
     def __init__(self,
                  root: tk.Frame,
-                 grid_to_col: int,
-                 utasks: list[tc.Task]):
+                 grid_to_col: int,):
 
         self.grid_to_col = grid_to_col
         self.task_id:int = None
@@ -97,7 +96,7 @@ class TaskEdit:
         self.parent_frame = tk.Frame(self.e_frame)
         self.parent_label= tk.Label(self.parent_frame)
         self.t_parent = None
-        self.parent_picker = tk.Button(self.e_frame,
+        self.parent_picker = tk.Button(self.parent_frame,
                                        text="Choose a Parent Task",
                                        command=lambda: self.show_p_list())
         self.parent_label.pack()
@@ -151,3 +150,24 @@ class TaskEdit:
 
     def show_subs(self, in_task: tc.Task):
         print("function show_subs not yet written.")
+
+    def hide_window(self):
+        """run pack_forget on all frames in object."""
+        self.head.pack_forget()
+        self.title_frame.pack_forget()
+        self.date_frame.pack_forget()
+        self.parent_frame.pack_forget()
+        self.sub_frame.pack_forget()
+        self.priority_frame.pack_forget()
+        self.task_delete_btn.pack_forget()
+        self.e_frame.pack_forget()
+
+    def show_window(self):
+        """Run pack on all frames in object."""
+        self.head.pack()
+        self.title_frame.pack()
+        self.date_frame.pack()
+        self.parent_frame.pack()
+        self.sub_frame.pack()
+        self.priority_frame.pack()
+        self.task_delete_btn.pack()

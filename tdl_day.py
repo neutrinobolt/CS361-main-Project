@@ -48,14 +48,13 @@ class TaskDisp:
         for task in u_tasks:
             if task.t_id == self.task.t_id:
                 task = self.task
-                print("Updated original task id")
         #Remove task display from parent
         self.disp_frame.destroy()
 
     def task_edit(self, editor: TaskEdit, in_task: tc.Task):
         """Configure input editor with details from input task, pack editor to frame"""
         #Configure editor frame
-        editor.task_id = in_task.tid
+        editor.task_id = in_task.t_id
         editor.title_var.set(in_task.title)
         editor.month_var.set(in_task.due.month)
         editor.day_var.set(in_task.due.day)
@@ -190,46 +189,29 @@ class Daylist:
         Function returns a tuple containing valid status (true if valid) and error message
         (empty string if valid)"""
 
-        input_valid = True
-        error_msg = ""
+
+        if not check_day.isdigit():
+            return (False, "ERROR: day must be a number.")
+
+        if not check_month.isdigit():
+            return (False, "ERROR: month must be a number.")
+
+        if not check_year.isdigit():
+            return (False, "ERROR: year must be a number.")
+
+        if not check_priority.isdigit():
+            return (False, "ERROR: priority must be a number.")
 
         try:
-            int(check_day)
-        except TypeError:
-            input_valid = False
-            error_msg = "ERROR: day must be a number."
-    
-        try:
-            int(check_month)
-        except TypeError:
-            input_valid = False
-            error_msg = "ERROR: month must be a number."
-    
-        try:
-            int(check_year)
-        except TypeError:
-            input_valid = False
-            error_msg = "ERROR: year must be a number."
-    
-        try:
-            int(check_priority)
-        except TypeError:
-            input_valid = False
-            error_msg = "ERROR: priority must be a number."
-    
-        try:
             dt(int(check_year), int(check_month), int(check_day))
-        except TypeError:
-            input_valid = False
-            error_msg = "ERROR: Must input a valid date."
-    
+        except ValueError:
+            return (False, "ERROR: Must input a valid date.")
+
         if int(check_priority) not in range(0, 11):
-            input_valid = False
-            error_msg = "ERROR: Priority must be between 0 and 10."
-    
-        return (input_valid, error_msg)
-    
-    
+            return (False, "ERROR: Priority must be between 0 and 10.")
+
+        return (True, "")
+
     def save_task(self):
         """After validating input, either return an error message or:
         - create a new task from input fields and current set id
@@ -257,15 +239,23 @@ class Daylist:
                                     False,
                                     self.t_editor.t_parent
                                     )
-                self.tasks.append(new_task)
+                is_in_tasks = False
+                for check_task in self.tasks:
+                    if check_task.t_id == new_task.t_id:
+                        check_task = new_task
+                        is_in_tasks = True
+                if not is_in_tasks:
+                    self.tasks.append(new_task)
+                self.u_dict["task_count"] = len(self.tasks)
                 #Hide editor frame
-                self.t_editor.e_frame.pack_forget()
                 self.save_btn.pack_forget()
+                self.quit_btn.pack_forget()
                 self.header.pack()
+                self.update()
                 self.od_frame.pack()
                 self.td_frame.pack()
                 self.quit_btn.pack()
-                self.update()
+                self.t_editor.hide_window()
 
             else:
                 self.t_editor.errors.configure(text=input_valid[1])
@@ -285,12 +275,12 @@ class Daylist:
 
             self.t_editor.task_id = self.u_dict["task_count"] + 1
 
+            self.t_editor.show_window()
             self.t_editor.e_frame.grid(row=0, column=self.t_editor.grid_to_col)
 
             self.header.pack_forget()
             self.od_frame.pack_forget()
             self.td_frame.pack_forget()
-            self.quit_btn.pack_forget()
 
             self.save_btn.pack()
 
@@ -322,6 +312,19 @@ class Daylist:
                                      self.t_editor))
         return out_list
 
+    def sort_by_priority(self,
+                         unsorted: list[tc.Task]) -> list[tc.Task]:
+        """Run input unsorted list through an insertion sort based on their priority."""
+        sorted_list: list[tc.Task] = []
+        for in_task in unsorted:
+            for check_task in sorted_list:
+                if in_task.priority < check_task.priority:
+                    sorted_list.insert(sorted_list.index(check_task), in_task)
+                    break
+            if in_task not in sorted_list:
+                sorted_list.append(in_task)
+        return sorted_list
+
     def update(self):
         """Update and pack all frames in daily to-do, using input tasklist.
         - destroy all frames in overdue and today
@@ -332,6 +335,7 @@ class Daylist:
             od_disp.disp_frame.destroy()
         #Rebuild taskdisp frames in overdue
         self.od_tasks = tc.get_overdue(self.tasks, self.today)
+        self.od_tasks = self.sort_by_priority(self.od_tasks)
         self.od_disps = self.display_tasks(self.od_list,
                                            self.od_tasks,
                                            self.tasks)
@@ -348,6 +352,7 @@ class Daylist:
 
         #Rebuild taskdisp frames in today
         self.td_tasks = tc.get_today(self.tasks, self.today)
+        self.td_tasks = self.sort_by_priority(self.td_tasks)
         self.td_disps = self.display_tasks(self.td_list,
                                            self.td_tasks,
                                            self.tasks)
@@ -366,20 +371,16 @@ class Daylist:
         self.od_tasks = []
         for od_task_disp in self.od_disps:
             self.od_tasks.append(od_task_disp.task)
-            print (od_task_disp.task.completed)
 
         self.td_tasks = []
         for td_task_disp in self.td_disps:
             self.td_tasks.append(td_task_disp.task)
-            print(td_task_disp.task.t_id)
 
         changed_tasks = self.od_tasks + self.td_tasks
         for old_task in self.tasks:
             for new_task in changed_tasks:
                 if new_task.t_id == old_task.t_id:
-                    print(f"Found original task with id {old_task.t_id}")
                     old_task = new_task
-                    print(f"Task completed: {old_task.completed}")
 
         # Pack current task list to json file
         task_list_dict: list[dict] = []

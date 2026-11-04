@@ -32,7 +32,7 @@ def main():
     t_editor = tk.Frame(window)
 
     day_obj = td.Daylist(window, p_main, USER_CHECK, current_date)
-    te_obj = te.TaskEdit(t_editor, 0, day_obj.tasks)
+    te_obj = te.TaskEdit(t_editor, 0)
     day_obj.t_editor = te_obj
 
     day_obj.update()
