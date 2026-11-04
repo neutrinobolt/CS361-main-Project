@@ -13,11 +13,10 @@ It contains code for running the main page of the app which contains:
 - Close Button
 """
 
-import json
 import tkinter as tk
 from datetime import date as dt
-from task_class import Task
-import tdl_funcs as tdlf
+import tdl_day as td
+import task_editor as te
 
 USER_CHECK = "test" #replace with login function when created
 
@@ -26,73 +25,17 @@ def main():
 
     current_date = dt.today()
 
-    task_data = {}
-    tasks:list[Task] = []
-    user = {}
-
-    od_tasks:list[Task] = []
-    td_tasks:list[Task] = []
-
-    #get json string
-    with open("./tasks.json", mode="r", encoding="utf-8") as tfile:
-        tdata_json = tfile.read()
-        task_data = json.loads(tdata_json)
-
-    #Get user task data
-    for user in task_data["users"]:
-        if user["uname"] == USER_CHECK:
-            tasks_dict = user["tasks"]
-            tasks = tdlf.taskify(tasks_dict)
-
-
     window = tk.Tk()
     window.title("Dewitt")
 
-    ################################################################
-    #Daily Tasks page display, initial setup
-    ################################################################
     p_main = tk.Frame(window)
-    overdue = tk.Frame(p_main)
-    today = tk.Frame(p_main)
-
     t_editor = tk.Frame(window)
 
-    #Header
-    header = tk.Frame(p_main)
-    title = tk.Label(header, text="To-Do Today")
-    task_creator = tk.Button(header,
-                            text="Create New Task",
-                            command= lambda: tdlf.task_create(t_editor,
-                                                              tasks,
-                                                              user,
-                                                              current_date,
-                                                              overdue,
-                                                              today,
-                                                              od_tasks,
-                                                              td_tasks,
-                                                              error_msg=""))
-    title.pack()
-    task_creator.pack()
+    day_obj = td.Daylist(window, p_main, USER_CHECK, current_date)
+    te_obj = te.TaskEdit(t_editor, 0, day_obj.tasks)
+    day_obj.t_editor = te_obj
 
-    header.pack()
-
-
-
-    tdlf.update_day_tasks(overdue,
-                          today,
-                          tasks,
-                          od_tasks,
-                          td_tasks,
-                          current_date,
-                          user,
-                          t_editor)
-
-    overdue.pack()
-    today.pack()
-
-    quit_btn = tk.Button(p_main,text="Close Dewitt",
-                        command=lambda: tdlf.end_prgm(tasks, od_tasks, td_tasks, user, window))
-    quit_btn.pack()
+    day_obj.update()
 
     p_main.grid(row=0, column=1)
     t_editor.grid(row=0, column=2)

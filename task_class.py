@@ -27,3 +27,47 @@ class Task:
         self.t_subs = tsubs
         self.priority = priority
         self.completed = completed
+
+def get_overdue(task_list: list[Task],
+                today: dt) ->list[Task]:
+    """Return a list of all tasks in input task list
+    that are incomplete and overdue."""
+    out_list = []
+    for task in task_list:
+        if not task.completed and task.due < today:
+            out_list.append(task)
+    return out_list
+
+def get_today(task_list: list[Task],
+                today: dt) -> list[Task]:
+    """Return a list of all tasks in input task list
+    that are incomplete and due today."""
+    out_list = []
+    for task in task_list:
+        if not task.completed and task.due == today:
+            out_list.append(task)
+    return out_list
+
+def get_task_by_id (task_list: list[Task], task_id: int) -> Task:
+    """Given a list of tasks, search list for task with matching id, return task"""
+    for l_task in task_list:
+        if l_task.t_id == task_id:
+            return l_task
+    return None
+
+def taskify(in_list: list[dict])->list[Task]:
+    """Take an input list of task dictionaries and output
+    a list of task objects"""
+    out_list = []
+    for in_task in in_list:
+        out_task = Task(in_task["id"],
+                        in_task["title"],
+                        dt(in_task["dyear"],
+                           in_task["dmonth"],
+                           in_task["dday"]),
+                        in_task["subtasks"],
+                        in_task["priority"],
+                        in_task["completed"],
+                        in_task["parent"])
+        out_list.append(out_task)
+    return out_list
