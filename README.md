@@ -1,7 +1,7 @@
 # CS361-main-Project
 
-All the main project files for my CS361: Software Engineering project, Fall 2026. Project name: To-Do Tree.
+## To DO
 
-Test Commit 1
-
-Test Commit 2
+1. Test Input Validation
+2. Implement parent/subtask adders
+3. Implement New Subtask Creator
