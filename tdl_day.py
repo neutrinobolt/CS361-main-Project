@@ -4,8 +4,9 @@ import json
 from datetime import date as dt
 import tkinter as tk
 import task_class as tc
-from task_editor import TaskEdit
+from task_editor import TaskEdit, new_parent, new_subs
 
+edit_task: tc.Task = None
 class TaskDisp:
     """TaskDisp contains info regardig:
     - parent display frame (input)
@@ -22,8 +23,7 @@ class TaskDisp:
     def __init__(self,
                  parent_frame: tk.Frame,
                  task_id: int,
-                 u_tasks: list[tc.Task],
-                 editor: TaskEdit):
+                 u_tasks: list[tc.Task]):
         """Create frame within parent frame, fill with three items in a row"""
         self.disp_frame = tk.Frame(parent_frame)
         self.task = tc.get_task_by_id(u_tasks, task_id)
@@ -34,12 +34,6 @@ class TaskDisp:
         self.title = tk.Label(self.disp_frame,
                               text=self.task.title)
         self.title.grid(row=0, column=1)
-        self.edit_btn = tk.Button(self.disp_frame,
-                                  text="Edit",
-                                  command=lambda:self.task_edit(editor,
-                                                                tc.get_task_by_id(u_tasks,
-                                                                                  task_id)))
-        self.edit_btn.grid(row=0, column=2)
 
     def mark_done(self, u_tasks:list[tc.Task]):
         """Set task complete to true, remove task from list"""
@@ -51,20 +45,29 @@ class TaskDisp:
         #Remove task display from parent
         self.disp_frame.destroy()
 
-    def task_edit(self, editor: TaskEdit, in_task: tc.Task):
-        """Configure input editor with details from input task, pack editor to frame"""
-        #Configure editor frame
-        editor.task_id = in_task.t_id
-        editor.title_var.set(in_task.title)
-        editor.month_var.set(in_task.due.month)
-        editor.day_var.set(in_task.due.day)
-        editor.year_var.set(in_task.due.year)
-        editor.priority_var.set(in_task.priority)
-        editor.show_parent(in_task)
-        editor.show_subs(in_task)
+class EtaskDisp:
+    """EtaskDisp contains info regarding:
+    - Parent Frame (input)
+    - Display Task (input)
+    - Dispframe
+    - Select buttton"""
 
-        #Pack Editor
-        editor.e_frame.pack()
+    def __init__(self,
+                 root: tk.Frame,
+                 disp_task: tc.Task):
+        self.disp_frame = tk.Frame(root)
+        self.disp_task = disp_task
+        self.select_btn = tk.Button(self.disp_frame,
+                                    text=disp_task.title,
+                                    command=lambda: self.task_sel(root))
+        self.select_btn.pack()
+
+    def task_sel(self, root: tk.Frame):
+        """Set edittask to disptask, close root frame"""
+        global edit_task
+        edit_task = self.disp_task
+        root.pack_forget()
+
 
 class Daylist:
     """Daylist contains info regarding:
@@ -169,11 +172,100 @@ class Daylist:
                                   text="Save task",
                                   command= self.save_task)
 
+        #Delete Button
+        self.task_delete_btn = tk.Button(self.root,
+                                            text="Exit Without Saving (Delete Task)",
+                                            command=lambda:self.task_delete())
+
+        #Edit Tasks button
+        self.edit_tasks: list[EtaskDisp] = []
+        self.edit_btn = tk.Button(self.root,
+                                  text="Edit a task",
+                                  command=self.show_etasks)
+        self.edit_btn.pack()
+
+        #Edit List Frame
+        self.edit_frame = tk.Frame(self.root)
+        self.edit_title = tk.Label(self.edit_frame, text="Select a task to edit, then click enter.\n If no task selected, return to main screen.")
+        self.edit_title.pack()
+
         #Close Button
         self.quit_btn = tk.Button(self.root,
                                   text="Close Dewitt",
                                   command= self.end_prgm)
         self.quit_btn.pack()
+
+    def task_edit(self):
+        """Set main window to editor display, input newtask info to editor"""
+        self.edit_btn.configure(command=self.show_etasks)
+        self.edit_frame.pack_forget()
+        self.edit_btn.pack_forget()
+        self.quit_btn.pack_forget()
+        if edit_task is None:
+            #Close edit list, reopen main frames
+
+            self.header.pack()
+            self.od_frame.pack()
+            self.td_frame.pack()
+            self.edit_btn.pack()
+            self.quit_btn.pack()
+        else:
+            #Set main window to edit display
+            self.save_btn.pack()
+            self.task_delete_btn.pack()
+            self.quit_btn.pack()
+
+            #Send edittask data to taskeditor
+            self.t_editor.title_var.set(edit_task.title)
+            self.t_editor.day_var.set(edit_task.due.day)
+            self.t_editor.month_var.set(edit_task.due.month)
+            self.t_editor.year_var.set(edit_task.due.year)
+            self.t_editor.priority_var.set(edit_task.priority)
+            self.t_editor.task_id = edit_task.t_id
+            self.t_editor.t_parent = edit_task.t_parent
+            self.t_editor.subs = []
+            global new_parent, new_subs
+            new_subs = []
+            new_parent = None
+            for sub_id in edit_task.t_subs:
+                in_sub = tc.get_task_by_id(self.tasks, sub_id)
+                if in_sub is not None:
+                    self.t_editor.subs.append(in_sub)
+                else:
+                    edit_task.t_subs.remove(in_sub)
+                    print(f"Removed nonexistent subtask id: {in_sub}")
+            self.t_editor.update_ps(self.tasks)
+
+            #Pack editor frame
+            self.t_editor.e_frame.pack()
+
+
+    def show_etasks(self):
+        """Close all other frames on main display. Open a list of editordisps with buttons that
+        send you to editor with that task's info."""
+
+        #Hide main frames
+        self.header.pack_forget()
+        self.od_frame.pack_forget()
+        self.td_frame.pack_forget()
+        self.edit_btn.pack_forget()
+
+        #Destroy old task list
+        for old_task in self.edit_tasks:
+            old_task.disp_frame.destroy()
+
+        #Show editable tasks
+        global edit_task
+        edit_task = None
+        for disp_task in self.od_tasks + self.td_tasks:
+            ed = EtaskDisp(self.edit_frame, disp_task)
+            self.edit_tasks.append(ed)
+            ed.disp_frame.pack()
+        self.edit_frame.pack()
+        self.edit_btn.pack()
+
+        #Change edit button
+        self.edit_btn.configure(command=self.task_edit)
 
 
     def input_validate(self,
@@ -220,6 +312,8 @@ class Daylist:
         - hide editor window"""
         if self.t_editor is not None:
             #Get entry values
+            global edit_task
+            edit_task = None
             in_month = self.t_editor.month_var.get()
             in_day = self.t_editor.day_var.get()
             in_year = self.t_editor.year_var.get()
@@ -249,11 +343,13 @@ class Daylist:
                 self.u_dict["task_count"] = len(self.tasks)
                 #Hide editor frame
                 self.save_btn.pack_forget()
+                self.task_delete_btn.pack_forget()
                 self.quit_btn.pack_forget()
                 self.header.pack()
                 self.update()
                 self.od_frame.pack()
                 self.td_frame.pack()
+                self.edit_btn.pack()
                 self.quit_btn.pack()
                 self.t_editor.hide_window()
 
@@ -267,11 +363,13 @@ class Daylist:
 
         if self.t_editor is not None:
             #set fields
+            global edit_task
             self.t_editor.title_var.set("")
             self.t_editor.month_var.set(self.today.month)
             self.t_editor.day_var.set(self.today.day)
             self.t_editor.year_var.set(self.today.year)
             self.t_editor.priority_var.set(0)
+            self.t_editor.parent_label.configure(text="No Parent task selected.")
 
             self.t_editor.task_id = self.u_dict["task_count"] + 1
 
@@ -281,8 +379,32 @@ class Daylist:
             self.header.pack_forget()
             self.od_frame.pack_forget()
             self.td_frame.pack_forget()
+            self.edit_btn.pack_forget()
 
             self.save_btn.pack()
+            self.task_delete_btn.pack()
+
+    def task_delete(self):
+        """Remove task with id taskid (in taskeditor) from tasks
+        close editor frames, open main frames"""
+        #Remove task if it already exists
+        rem_task = tc.get_task_by_id(self.tasks, self.t_editor.task_id)
+        if rem_task is not None:
+            self.tasks.remove(rem_task)
+
+        #Close e frames
+        self.t_editor.e_frame.pack_forget()
+
+        #open updated m frames
+        self.update()
+        self.save_btn.pack_forget()
+        self.quit_btn.pack_forget()
+        self.task_delete_btn.pack_forget()
+        self.header.pack()
+        self.od_frame.pack()
+        self.td_frame.pack()
+        self.edit_btn.pack()
+        self.quit_btn.pack()
 
     def hide_overdue(self):
         """Unpack overdue list, set user show_overdue to false, change button"""
@@ -308,8 +430,7 @@ class Daylist:
         for task in list_to_disp:
             out_list.append(TaskDisp(task_frame,
                                      task.t_id,
-                                     u_tasks,
-                                     self.t_editor))
+                                     u_tasks,))
         return out_list
 
     def sort_by_priority(self,
@@ -397,11 +518,15 @@ class Daylist:
                 "completed": in_task.completed
             }
             task_list_dict.append(task_dict)
+        if len(task_list_dict) < self.u_dict["task_count"]:
+            new_count = self.u_dict["task_count"]
+        else:
+            new_count = len(task_list_dict)
         self.task_data = {
             "users": [
                 {
                     "uname": self.u_dict["uname"], #change later
-                    "task_count": len(task_list_dict),
+                    "task_count": new_count,
                     "show_overdue": self.u_dict["show_overdue"],
                     "tasks": task_list_dict
                 }

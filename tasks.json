@@ -2,7 +2,7 @@
     "users": [
         {
             "uname": "test",
-            "task_count": 30,
+            "task_count": 33,
             "show_overdue": false,
             "tasks": [
                 {
@@ -335,7 +335,31 @@
                     "parent": null,
                     "subtasks": [],
                     "priority": 5,
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "id": 31,
+                    "title": "testparent",
+                    "dday": 5,
+                    "dmonth": 11,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [
+                        32
+                    ],
+                    "priority": 0,
+                    "completed": true
+                },
+                {
+                    "id": 32,
+                    "title": "testsub1",
+                    "dday": 5,
+                    "dmonth": 11,
+                    "dyear": 2026,
+                    "parent": 31,
+                    "subtasks": [],
+                    "priority": 0,
+                    "completed": true
                 }
             ]
         }
