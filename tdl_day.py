@@ -111,15 +111,27 @@ class Daylist:
         self.te_frame = te_frame
 
         #get json string
-        with open("./tasks.json", mode="r", encoding="utf-8") as tfile:
-            tdata_json = tfile.read()
-            self.task_data = json.loads(tdata_json)
+        try:
+            with open("./tasks.json", mode="r", encoding="utf-8") as tfile:
+                tdata_json = tfile.read()
+                self.task_data = json.loads(tdata_json)
+        except FileNotFoundError:
+            self.task_data = {
+                "users": [
+                                {
+                                    "uname": "test", #change later
+                                    "task_count": 0,
+                                    "show_overdue": True,
+                                    "tasks": self.tasks
+                                }
+                            ]
+            }
 
         #Get user task data
         for check_user in self.task_data["users"]:
             if check_user["uname"] == user_check:
-                tasks_dict = check_user["tasks"]
                 self.u_dict = check_user
+                tasks_dict = check_user["tasks"]
                 self.tasks = tc.taskify(tasks_dict)
 
         #derive remaining values
@@ -601,7 +613,7 @@ class Daylist:
 
         json_tasks = json.dumps(self.task_data, indent=4)
         #write to json file
-        with open("tasks.json", mode="w", encoding="utf-8") as outfile:
+        with open("./tasks.json", mode="w", encoding="utf-8") as outfile:
             outfile.write(json_tasks)
 
         #Destroy all tk objects
