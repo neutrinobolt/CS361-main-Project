@@ -227,17 +227,15 @@ class Daylist:
             self.t_editor.priority_var.set(edit_task.priority)
             self.t_editor.task_id = edit_task.t_id
             self.t_editor.t_parent = edit_task.t_parent
-            self.t_editor.subs = []
+            self.t_editor.subs = edit_task.t_subs
             global new_parent, new_subs
             new_subs = []
             new_parent = None
             for sub_id in edit_task.t_subs:
                 in_sub = tc.get_task_by_id(self.tasks, sub_id)
-                if in_sub is not None:
-                    self.t_editor.subs.append(in_sub)
-                else:
+                if in_sub is None:
                     edit_task.t_subs.remove(in_sub)
-                    print(f"Removed nonexistent subtask id: {in_sub}")
+                    
             self.t_editor.update_ps(self.tasks)
 
             #Pack editor frame
@@ -333,9 +331,7 @@ class Daylist:
                 
                 for sub_te in ptask_edit.sub_editors:
                     self.save(sub_te)
-                    print(f"subte {sub_te.title_var.get()} id: {sub_te.task_id}")
                 ptask_edit.errors.pack_forget()
-                print(f"Saving task with title {ptask_edit.title_var.get()}")
 
                 #Create new task from input
                 if ptask_edit.task_id is None:
@@ -350,8 +346,6 @@ class Daylist:
                                     False,
                                     ptask_edit.t_parent
                                     )
-                
-                print(f"New task {new_task.title} has id {new_task.t_id}")
 
                 #Destroy editor frame if all sub editors are also hidden
                 all_subs_valid = True
@@ -368,16 +362,13 @@ class Daylist:
                 is_in_tasks = False
                 for check_task in self.tasks:
                     if check_task.t_id == new_task.t_id:
-                        print(f"replacing existing task {check_task.title} with {new_task.title}")
-                        check_task = new_task
+                        self.tasks[self.tasks.index(check_task)] = new_task
                         is_in_tasks = True
-                        print(f"Task {tc.get_task_by_id(self.tasks, check_task.t_id)} updated.")
                 if not is_in_tasks:
                     self.tasks.append(new_task)
                 for sub_id in new_task.t_subs:
                     tc.get_task_by_id(self.tasks, sub_id).t_parent = new_task.t_id
                 self.u_dict["task_count"] = self.get_highest_id()
-                print(f"Saved task {new_task.title}")
                 
             else:
                 ptask_edit.errors.configure(text=input_valid[1])
@@ -394,7 +385,6 @@ class Daylist:
         edit_task = None
         if self.t_editor is not None:
             #Get entry values
-            print("Saving teditor")
             self.save(self.t_editor)
 
             #Destroy editor frame, return to main
@@ -455,7 +445,8 @@ class Daylist:
         rem_task = tc.get_task_by_id(self.tasks, dest_edit.task_id)
         if rem_task is not None:
             #Set parent and sub connections to none
-            tc.get_task_by_id(self.tasks, rem_task.t_parent).t_subs.remove(rem_task.t_id)
+            if rem_task.t_id in tc.get_task_by_id(self.tasks, rem_task.t_parent).t_subs:
+                tc.get_task_by_id(self.tasks, rem_task.t_parent).t_subs.remove(rem_task.t_id)
             for sub_id in rem_task.t_subs:
                 tc.get_task_by_id(self.tasks, sub_id).t_parent = None
 

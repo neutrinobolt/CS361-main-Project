@@ -22,7 +22,8 @@ class EditDisp:
                  disp_task: tc.Task,
                  root: tk.Frame,
                  output_case: str,
-                 upper_tid: int
+                 upper_tid: int,
+                 u_tasks: list[tc.Task]
                  ):
         #Derived variables
         self.in_task = disp_task
@@ -36,26 +37,26 @@ class EditDisp:
                                  text="select",)
         match output_case:
             case "set_parent":
-                self.add_btn.configure(command=lambda:self.set_parent(disp_task, root, upper_tid))
+                self.add_btn.configure(command=lambda:self.set_parent(disp_task, root, u_tasks))
             case "set_sub":
                 self.add_btn.configure(command=lambda:self.set_sub(disp_task, root, upper_tid))
         self.add_btn.grid(row=0, column=1)
 
         self.ed_frame.pack()
 
-    def set_sub(self, disp_task: tc.Task, root: tk.Frame, upper_tid: int):
+    def set_sub(self, disp_task: tc.Task, root: tk.Frame, upper_tid: int,):
         """append disp task to upper task subs, set upper task id to parent of disp task,
         destroy frame"""
         new_subs.append(disp_task.t_id)
         disp_task.t_parent = upper_tid
         root.destroy()
 
-    def set_parent(self, disp_task: tc.Task, root: tk.Frame, upper_tid: int):
+    def set_parent(self, disp_task: tc.Task, root: tk.Frame, u_tasks: list[tc.Task]):
         """set disp task to parent of upper task, append upper task id to disp subs,
         destroy frame"""
         global new_parent
         new_parent = disp_task.t_id
-        disp_task.t_subs.append(upper_tid)
+        u_tasks[u_tasks.index(tc.get_task_by_id(u_tasks, disp_task.t_id))].t_subs.append(disp_task.t_id)
         root.destroy()
 
 class SubDisp:
@@ -79,10 +80,7 @@ class SubDisp:
 
     def remove_sub(self, u_tasks: list[tc.Task], disp_task: tc.Task):
         """Disconnect disp task from its parent, destroy disp frame"""
-        print(f"disptask tid: {disp_task.t_id}")
-        print(f"dispparent id: {disp_task.t_parent}")
         disp_parent = tc.get_task_by_id(u_tasks, disp_task.t_parent)
-        print(f"dispparent tsubs: {disp_parent.t_subs}")
         disp_parent.t_subs.remove(disp_task.t_id)
         disp_task.t_parent = None
 
@@ -177,7 +175,8 @@ class TaskEdit:
         self.dentry.pack()
         self.date_frame.pack()
 
-        self.task_list_f = tk.Frame(root)
+        self.task_list_f: tk.Frame = tk.Frame(root)
+        self.task_list: list[EditDisp] = []
 
         #Return Button
         self.return_btn = tk.Button(self.e_frame, text="Return to Editor",
@@ -189,7 +188,7 @@ class TaskEdit:
         self.t_parent: int = None
         self.parent_picker = tk.Button(self.parent_frame,
                                        text="Choose a Parent Task",
-                                       command=lambda: self.show_p_list(u_tasks))
+                                       command=lambda: self.show_p_list(u_tasks, root))
         self.parent_label.pack()
         self.parent_picker.pack()
         self.parent_frame.pack()
@@ -201,7 +200,7 @@ class TaskEdit:
         self.subs: list[int] = []
         self.add_sub_btn = tk.Button(self.sub_frame,
                                      text="Add Subtask",
-                                     command=lambda:self.show_s_list(u_tasks))
+                                     command=lambda:self.show_s_list(u_tasks, root))
         self.sub_title.pack()
         self.sub_list.pack()
         self.add_sub_btn.pack()
@@ -244,6 +243,12 @@ class TaskEdit:
     def update_ps(self, u_tasks: list[tc.Task]):
         """Reopen frame with new parent and sub values for current task id"""
 
+        #Close any edisp frames still open
+        if self.task_list_f.winfo_exists():
+            for ed_frame in self.task_list_f.winfo_children():
+                ed_frame.destroy()
+            self.task_list = []
+
         #Bring back main frames
         self.return_btn.pack_forget()
         self.head.pack()
@@ -256,7 +261,6 @@ class TaskEdit:
         #Write parent and subs
         self.subs += new_subs
         self.t_parent = new_parent
-        print(f"Task parent id: {self.t_parent}. Task sub ids: {self.subs}")
 
         if self.t_parent is not None:
             ptask = tc.get_task_by_id(u_tasks, self.t_parent)
@@ -270,17 +274,18 @@ class TaskEdit:
 
         self.show_subs(u_tasks)
 
-    def show_p_list(self, u_tasks: list[tc.Task]):
+    def show_p_list(self, u_tasks: list[tc.Task], root: tk.Frame):
         """Create a list of all incomplete tasks in editdisps.
         Set so that selecting a taskedit sets current task parent to that task."""
-        global new_parent
-        new_parent = self.task_id
+        self.task_list_f = tk.Frame(root)
         for check_task in u_tasks:
-            if not check_task.completed and check_task.t_id != self.task_id:
+            if not check_task.completed and check_task.t_id != self.task_id and check_task.t_id not in self.subs:
                 new_edisp = EditDisp(check_task, self.task_list_f,
                                      "set_parent",
-                                     self.task_id)
+                                     self.task_id,
+                                     u_tasks)
                 new_edisp.ed_frame.pack()
+                self.task_list.append(new_edisp)
         self.task_list_f.grid(row=0, column=self.grid_to_col + 1)
         self.return_btn.pack()
 
@@ -291,16 +296,16 @@ class TaskEdit:
         self.sub_frame.pack_forget()
         self.priority_frame.pack_forget()
 
-    def show_s_list(self, u_tasks: list[tc.Task]):
+    def show_s_list(self, u_tasks: list[tc.Task], root: tk.Frame):
         """Pack editdisps of all incomplete tasks to tasklistf.
         set taskedit button to set_sub"""
-        global new_parent
-        new_parent = self.task_id
+        self.task_list_f = tk.Frame(root)
         for check_task in u_tasks:
-            if not check_task.completed and check_task.t_id != self.task_id:
+            if not check_task.completed and check_task.t_id != self.task_id and check_task.t_id not in self.subs:
                 new_edisp = EditDisp(check_task, self.task_list_f,
                                      "set_sub",
-                                     self.task_id)
+                                     self.task_id,
+                                     u_tasks)
                 new_edisp.ed_frame.pack()
         self.task_list_f.grid(row=0, column=self.grid_to_col + 1)
         self.return_btn.pack()
@@ -314,8 +319,6 @@ class TaskEdit:
 
     def show_subs(self, u_tasks: list[tc.Task]):
         """Pack subdisp frames for every task in utasks that is a sub of selftaskid"""
-        self.subs = tc.get_task_by_id(u_tasks, self.task_id).t_subs
-        print(self.subs)
         for sub_task_id in self.subs:
             sub_task = tc.get_task_by_id(u_tasks, sub_task_id)
             if sub_task is not None:

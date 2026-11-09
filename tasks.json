@@ -2,7 +2,7 @@
     "users": [
         {
             "uname": "test",
-            "task_count": 56,
+            "task_count": 64,
             "show_overdue": false,
             "tasks": [
                 {
@@ -372,7 +372,7 @@
                         null
                     ],
                     "priority": 0,
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "id": 35,
@@ -620,7 +620,7 @@
                     "parent": 56,
                     "subtasks": [],
                     "priority": 0,
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "id": 56,
@@ -633,7 +633,92 @@
                         55
                     ],
                     "priority": 0,
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "id": 57,
+                    "title": "Finish Testing Dewitt",
+                    "dday": 8,
+                    "dmonth": 11,
+                    "dyear": 2026,
+                    "parent": 57,
+                    "subtasks": [
+                        58,
+                        62,
+                        57,
+                        57,
+                        57
+                    ],
+                    "priority": 0,
+                    "completed": true
+                },
+                {
+                    "id": 58,
+                    "title": "Test editor buttons",
+                    "dday": 8,
+                    "dmonth": 11,
+                    "dyear": 2026,
+                    "parent": 57,
+                    "subtasks": [
+                        59
+                    ],
+                    "priority": 0,
+                    "completed": true
+                },
+                {
+                    "id": 59,
+                    "title": "test new subtask creator button",
+                    "dday": 8,
+                    "dmonth": 11,
+                    "dyear": 2026,
+                    "parent": 58,
+                    "subtasks": [],
+                    "priority": 0,
+                    "completed": true
+                },
+                {
+                    "id": 61,
+                    "title": "Test delete subtask frame",
+                    "dday": 8,
+                    "dmonth": 11,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [],
+                    "priority": 0,
+                    "completed": true
+                },
+                {
+                    "id": 62,
+                    "title": "Test parent button",
+                    "dday": 8,
+                    "dmonth": 11,
+                    "dyear": 2026,
+                    "parent": 57,
+                    "subtasks": [],
+                    "priority": 0,
+                    "completed": true
+                },
+                {
+                    "id": 63,
+                    "title": "Test parent button",
+                    "dday": 8,
+                    "dmonth": 11,
+                    "dyear": 2026,
+                    "parent": 57,
+                    "subtasks": [],
+                    "priority": 0,
+                    "completed": true
+                },
+                {
+                    "id": 64,
+                    "title": "Test add sub buttons",
+                    "dday": 8,
+                    "dmonth": 11,
+                    "dyear": 2026,
+                    "parent": null,
+                    "subtasks": [],
+                    "priority": 0,
+                    "completed": true
                 }
             ]
         }
