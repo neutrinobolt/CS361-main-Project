@@ -677,17 +677,6 @@
                     "completed": true
                 },
                 {
-                    "id": 61,
-                    "title": "Test delete subtask frame",
-                    "dday": 8,
-                    "dmonth": 11,
-                    "dyear": 2026,
-                    "parent": null,
-                    "subtasks": [],
-                    "priority": 0,
-                    "completed": true
-                },
-                {
                     "id": 62,
                     "title": "Test parent button",
                     "dday": 8,
