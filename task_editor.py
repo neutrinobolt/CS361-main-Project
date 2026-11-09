@@ -1,7 +1,6 @@
 """Contains object class for task editor windows"""
 
 import tkinter as tk
-from pprint import pprint
 import task_class as tc
 
 new_parent:int = None
@@ -128,6 +127,7 @@ class TaskEdit:
         self.task_id:int = None
         self.out_task: tc.Task = None
         self.output_ready = False
+        self.sub_editors: list[TaskEdit] = []
         #Setup frame
         self.e_frame = tk.Frame(root)
         #Header
@@ -207,6 +207,10 @@ class TaskEdit:
         self.add_sub_btn.pack()
         self.sub_frame.pack()
 
+        #New Subtask Creator
+        self.new_sub_btn = tk.Button(self.sub_frame, text="Create new subtask", command=lambda: self.sub_edit(root, u_tasks))
+        self.new_sub_btn.pack()
+
         #Priority Entry
         self.priority_frame = tk.Frame(self.e_frame)
         self.priority_title = tk.Label(self.priority_frame,
@@ -220,6 +224,23 @@ class TaskEdit:
         self.priority_entry.pack()
         self.priority_frame.pack()
 
+    def sub_edit(self, root: tk.Frame, u_tasks: list[tc.Task]):
+        """Create a new Taskedit, grid next to this one. Set values to default, but don't show the
+        change parent button."""
+        #create sub taskedit
+        new_te = TaskEdit(root, self.grid_to_col + 2, u_tasks)
+        new_te.day_var.set(self.day_var.get())
+        new_te.month_var.set(self.month_var.get())
+        new_te.year_var.set(self.year_var.get())
+        new_te.priority_var.set(self.priority_var.get())
+        new_te.parent_label.configure(text=f"Parent: {self.title_var.get()}")
+        new_te.parent_picker.pack_forget()
+        new_te.t_parent = self.task_id
+
+        #Grid new taskedit and append to self. sublist
+        self.sub_editors.append(new_te)
+        new_te.e_frame.grid(row=0, column=new_te.grid_to_col)
+
     def update_ps(self, u_tasks: list[tc.Task]):
         """Reopen frame with new parent and sub values for current task id"""
 
@@ -232,12 +253,11 @@ class TaskEdit:
         self.sub_frame.pack()
         self.priority_frame.pack()
 
-        
         #Write parent and subs
         self.subs += new_subs
         self.t_parent = new_parent
         print(f"Task parent id: {self.t_parent}. Task sub ids: {self.subs}")
-        
+
         if self.t_parent is not None:
             ptask = tc.get_task_by_id(u_tasks, self.t_parent)
             if ptask is not None:
@@ -247,10 +267,9 @@ class TaskEdit:
                 self.t_parent = None
         else:
             self.parent_label.configure(text="No Parent Selected.")
-            
+
         self.show_subs(u_tasks)
 
-    
     def show_p_list(self, u_tasks: list[tc.Task]):
         """Create a list of all incomplete tasks in editdisps.
         Set so that selecting a taskedit sets current task parent to that task."""
@@ -323,3 +342,4 @@ class TaskEdit:
         self.parent_frame.pack()
         self.sub_frame.pack()
         self.priority_frame.pack()
+        self.e_frame.grid(row=0, column=self.grid_to_col)

@@ -16,7 +16,7 @@ It contains code for running the main page of the app which contains:
 import tkinter as tk
 from datetime import date as dt
 import tdl_day as td
-import task_editor as te
+# import task_editor as te
 
 USER_CHECK = "test" #replace with login function when created
 
@@ -31,9 +31,7 @@ def main():
     p_main = tk.Frame(window)
     t_editor = tk.Frame(window)
 
-    day_obj = td.Daylist(window, p_main, USER_CHECK, current_date)
-    te_obj = te.TaskEdit(t_editor, 0, day_obj.tasks)
-    day_obj.t_editor = te_obj
+    day_obj = td.Daylist(window, p_main, USER_CHECK, current_date, t_editor)
 
     day_obj.update()
 

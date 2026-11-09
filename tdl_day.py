@@ -96,18 +96,19 @@ class Daylist:
                  root: tk.Frame,
                  user_check: str,
                  today: dt,
-                 t_editor: TaskEdit = None
+                 te_frame: tk.Frame,
                  ):
         """Using input arguments, create remaining data"""
         #Set input values
         self.window = window
         self.root = root
         self.u_dict = {}
-        self.t_editor = t_editor
+        self.t_editor = None
         self.today = today
         self.task_data = {}
         self.tasks = []
         self.user_check = user_check
+        self.te_frame = te_frame
 
         #get json string
         with open("./tasks.json", mode="r", encoding="utf-8") as tfile:
@@ -175,7 +176,7 @@ class Daylist:
         #Delete Button
         self.task_delete_btn = tk.Button(self.root,
                                             text="Exit Without Saving (Delete Task)",
-                                            command=lambda:self.task_delete())
+                                            command=self.task_deleter)
 
         #Edit Tasks button
         self.edit_tasks: list[EtaskDisp] = []
@@ -215,6 +216,9 @@ class Daylist:
             self.task_delete_btn.pack()
             self.quit_btn.pack()
 
+            #Create new teditor
+            self.t_editor = TaskEdit(self.te_frame, 0, self.tasks)
+
             #Send edittask data to taskeditor
             self.t_editor.title_var.set(edit_task.title)
             self.t_editor.day_var.set(edit_task.due.day)
@@ -237,7 +241,7 @@ class Daylist:
             self.t_editor.update_ps(self.tasks)
 
             #Pack editor frame
-            self.t_editor.e_frame.pack()
+            self.t_editor.e_frame.grid(row=0, column=self.t_editor.grid_to_col)
 
 
     def show_etasks(self):
@@ -304,62 +308,118 @@ class Daylist:
 
         return (True, "")
 
-    def save_task(self):
-        """After validating input, either return an error message or:
-        - create a new task from input fields and current set id
-        - add new task to main window task list
-        - update main window
-        - hide editor window"""
+    def get_highest_id(self) -> int:
+        """Set task count to highest id"""
+        highest = 0
+        for task in self.tasks:
+            if task.t_id > highest:
+                highest = task.t_id
+        return highest
+
+
+    def save(self, ptask_edit: TaskEdit):
+        """- Validate input
+        - Recursively save all subtasks in task, then save task"""
+        self.u_dict["task_count"] = self.get_highest_id()
         if self.t_editor is not None:
             #Get entry values
-            global edit_task
-            edit_task = None
             in_month = self.t_editor.month_var.get()
             in_day = self.t_editor.day_var.get()
             in_year = self.t_editor.year_var.get()
             in_priority = self.t_editor.priority_var.get()
 
             input_valid = self.input_validate(in_day, in_month, in_year, in_priority)
-
             if input_valid[0]:
-                self.t_editor.errors.pack_forget()
+                
+                for sub_te in ptask_edit.sub_editors:
+                    self.save(sub_te)
+                    print(f"subte {sub_te.title_var.get()} id: {sub_te.task_id}")
+                ptask_edit.errors.pack_forget()
+                print(f"Saving task with title {ptask_edit.title_var.get()}")
 
                 #Create new task from input
-                new_task = tc.Task(self.t_editor.task_id,
-                                    self.t_editor.title_var.get(),
+                if ptask_edit.task_id is None:
+                    self.u_dict["task_count"] += 1
+                    ptask_edit.task_id = self.u_dict["task_count"]
+
+                new_task = tc.Task(ptask_edit.task_id,
+                                    ptask_edit.title_var.get(),
                                     dt(int(in_year), int(in_month), int(in_day)),
-                                    self.t_editor.subs,
+                                    ptask_edit.subs,
                                     int(in_priority),
                                     False,
-                                    self.t_editor.t_parent
+                                    ptask_edit.t_parent
                                     )
+                
+                print(f"New task {new_task.title} has id {new_task.t_id}")
+
+                #Destroy editor frame if all sub editors are also hidden
+                all_subs_valid = True
+                for sub_te in ptask_edit.sub_editors:
+                    if sub_te.e_frame.winfo_exists():
+                        all_subs_valid = False
+                    else:
+                        new_task.t_subs.append(sub_te.task_id)
+                        ptask_edit.sub_editors.remove(sub_te)
+                if all_subs_valid:
+                    ptask_edit.e_frame.destroy()
+
+                #Add newtask if not already existing, replace if existing
                 is_in_tasks = False
                 for check_task in self.tasks:
                     if check_task.t_id == new_task.t_id:
+                        print(f"replacing existing task {check_task.title} with {new_task.title}")
                         check_task = new_task
                         is_in_tasks = True
+                        print(f"Task {tc.get_task_by_id(self.tasks, check_task.t_id)} updated.")
                 if not is_in_tasks:
                     self.tasks.append(new_task)
-                self.u_dict["task_count"] = len(self.tasks)
-                #Hide editor frame
-                self.save_btn.pack_forget()
-                self.task_delete_btn.pack_forget()
-                self.quit_btn.pack_forget()
-                self.header.pack()
-                self.update()
-                self.od_frame.pack()
-                self.td_frame.pack()
-                self.edit_btn.pack()
-                self.quit_btn.pack()
-                self.t_editor.hide_window()
-
+                for sub_id in new_task.t_subs:
+                    tc.get_task_by_id(self.tasks, sub_id).t_parent = new_task.t_id
+                self.u_dict["task_count"] = self.get_highest_id()
+                print(f"Saved task {new_task.title}")
+                
             else:
-                self.t_editor.errors.configure(text=input_valid[1])
-                self.t_editor.errors.pack()
+                ptask_edit.errors.configure(text=input_valid[1])
+                ptask_edit.errors.pack()
+
+
+    def save_task(self):
+        """After validating input, either return an error message or:
+        - create a new task from input fields and current set id
+        - add new task to main window task list
+        - update main window
+        - hide editor window"""
+        global edit_task
+        edit_task = None
+        if self.t_editor is not None:
+            #Get entry values
+            print("Saving teditor")
+            self.save(self.t_editor)
+
+            #Destroy editor frame, return to main
+            if self.t_editor.e_frame.winfo_exists():
+                self.t_editor.e_frame.destroy()
+            self.t_editor = None
+        #Reset Main window
+
+        self.save_btn.pack_forget()
+        self.task_delete_btn.pack_forget()
+        self.quit_btn.pack_forget()
+
+        self.update()
+        self.header.pack()
+        self.od_frame.pack()
+        self.td_frame.pack()
+        self.edit_btn.pack()
+        self.quit_btn.pack()
+            
 
     def task_create(self):
         """Open Task Creator menu with date input reflecting current date,
         all other fields empty."""
+
+        self.t_editor = TaskEdit(self.te_frame, 0, self.tasks)
 
         if self.t_editor is not None:
             #set fields
@@ -371,8 +431,6 @@ class Daylist:
             self.t_editor.priority_var.set(0)
             self.t_editor.parent_label.configure(text="No Parent task selected.")
 
-            self.t_editor.task_id = self.u_dict["task_count"] + 1
-
             self.t_editor.show_window()
             self.t_editor.e_frame.grid(row=0, column=self.t_editor.grid_to_col)
 
@@ -380,20 +438,37 @@ class Daylist:
             self.od_frame.pack_forget()
             self.td_frame.pack_forget()
             self.edit_btn.pack_forget()
+            self.quit_btn.pack_forget()
 
             self.save_btn.pack()
             self.task_delete_btn.pack()
+            self.quit_btn.pack()
 
-    def task_delete(self):
+    def task_delete(self, dest_edit: TaskEdit):
         """Remove task with id taskid (in taskeditor) from tasks
         close editor frames, open main frames"""
+        #Operate recursively over subtask editor frames
+        for eframe in dest_edit.sub_editors:
+            self.task_delete(eframe)
+
         #Remove task if it already exists
-        rem_task = tc.get_task_by_id(self.tasks, self.t_editor.task_id)
+        rem_task = tc.get_task_by_id(self.tasks, dest_edit.task_id)
         if rem_task is not None:
+            #Set parent and sub connections to none
+            tc.get_task_by_id(self.tasks, rem_task.t_parent).t_subs.remove(rem_task.t_id)
+            for sub_id in rem_task.t_subs:
+                tc.get_task_by_id(self.tasks, sub_id).t_parent = None
+
             self.tasks.remove(rem_task)
 
         #Close e frames
-        self.t_editor.e_frame.pack_forget()
+        dest_edit.e_frame.destroy()
+
+        
+
+    def task_deleter(self):
+        """Run recursive taskdelete, return to main display"""
+        self.task_delete(self.t_editor)
 
         #open updated m frames
         self.update()
