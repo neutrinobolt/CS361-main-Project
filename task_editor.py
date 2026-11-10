@@ -39,16 +39,17 @@ class EditDisp:
             case "set_parent":
                 self.add_btn.configure(command=lambda:self.set_parent(disp_task, root, u_tasks))
             case "set_sub":
-                self.add_btn.configure(command=lambda:self.set_sub(disp_task, root, upper_tid))
+                self.add_btn.configure(command=lambda:self.set_sub(disp_task, root, upper_tid, u_tasks))
         self.add_btn.grid(row=0, column=1)
 
         self.ed_frame.pack()
 
-    def set_sub(self, disp_task: tc.Task, root: tk.Frame, upper_tid: int,):
+    def set_sub(self, disp_task: tc.Task, root: tk.Frame, upper_tid: int, u_tasks: list[tc.Task]):
         """append disp task to upper task subs, set upper task id to parent of disp task,
         destroy frame"""
         new_subs.append(disp_task.t_id)
-        disp_task.t_parent = upper_tid
+        u_tasks[u_tasks.index(disp_task)].t_parent = upper_tid
+        
         root.destroy()
 
     def set_parent(self, disp_task: tc.Task, root: tk.Frame, u_tasks: list[tc.Task]):
@@ -80,11 +81,11 @@ class SubDisp:
 
     def remove_sub(self, u_tasks: list[tc.Task], disp_task: tc.Task):
         """Disconnect disp task from its parent, destroy disp frame"""
-        disp_parent = tc.get_task_by_id(u_tasks, disp_task.t_parent)
-        disp_parent.t_subs.remove(disp_task.t_id)
-        disp_task.t_parent = None
+        if disp_task.t_parent is not None:
+            u_tasks[u_tasks.index(tc.get_task_by_id(u_tasks, disp_task.t_parent))].t_subs.remove(disp_task.t_id)
+        u_tasks[u_tasks.index(disp_task)].t_parent = None
 
-        self.disp_frame.pack_forget()
+        self.disp_frame.destroy()
 
 class TaskEdit:
     """TaskEdit contains info regarding:
@@ -319,6 +320,10 @@ class TaskEdit:
 
     def show_subs(self, u_tasks: list[tc.Task]):
         """Pack subdisp frames for every task in utasks that is a sub of selftaskid"""
+        for frame in self.sub_list.winfo_children():
+            frame.destroy()
+        self.subs
+
         for sub_task_id in self.subs:
             sub_task = tc.get_task_by_id(u_tasks, sub_task_id)
             if sub_task is not None:

@@ -381,6 +381,8 @@ class Daylist:
                 for sub_id in new_task.t_subs:
                     tc.get_task_by_id(self.tasks, sub_id).t_parent = new_task.t_id
                 self.u_dict["task_count"] = self.get_highest_id()
+                if new_task.t_parent is not None:
+                    self.tasks[self.tasks.index(tc.get_task_by_id(self.tasks, new_task.t_parent))].t_subs.append(new_task.t_id)
                 
             else:
                 ptask_edit.errors.configure(text=input_valid[1])
@@ -466,8 +468,6 @@ class Daylist:
 
         #Close e frames
         dest_edit.e_frame.destroy()
-
-        
 
     def task_deleter(self):
         """Run recursive taskdelete, return to main display"""
